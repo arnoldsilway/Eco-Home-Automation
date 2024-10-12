@@ -1,4 +1,4 @@
-define BLYNK_AUTH_TOKEN "9K7M-MD6H40e-p9OJr6XPCAbJvnlKdb0"
+define BLYNK_AUTH_TOKEN "9K7M-MD6H40e-p9OJr6XPCAbJvnlKdb0"  #Token is provided by the app itself
 #define BLYNK_TEMPLATE_ID "TMPL3wxHhYG83"
 #define BLYNK_TEMPLATE_NAME "ESP32 Home Automation"
 
