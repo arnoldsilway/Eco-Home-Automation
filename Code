@@ -1,0 +1,143 @@
+define BLYNK_AUTH_TOKEN "9K7M-MD6H40e-p9OJr6XPCAbJvnlKdb0"
+#define BLYNK_TEMPLATE_ID "TMPL3wxHhYG83"
+#define BLYNK_TEMPLATE_NAME "ESP32 Home Automation"
+
+#define BLYNK_PRINT Serial
+
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+#include "DHT.h"
+#include <ESP32Servo.h>
+#include <LiquidCrystal_I2C.h>
+#include <string>
+
+char auth[] = BLYNK_AUTH_TOKEN;
+
+char ssid[] = "Rushikesh Narzo 50";
+char pass[] = "Wifi2023";
+
+#define led1_pin 13
+#define led2_pin 12
+#define Buzz 14
+#define led6_pin 18
+#define temp_pin 25
+#define servo_pin 4
+
+#define DHTTYPE DHT11     // DHT 11
+DHT dht(temp_pin, DHTTYPE);
+BlynkTimer timer;
+
+Servo myservo;
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+int led1_state = 0;
+int led2_state = 0;
+
+float temp_in_C = 0.0;
+float hum = 0.0;
+
+#define button1_vpin    V1
+#define button2_vpin    V2
+#define slider_vpin     V5
+#define tempC_vpin      V6
+#define tempH_vpin      V7
+
+
+BLYNK_CONNECTED() {
+  Blynk.syncVirtual(button1_vpin);
+  Blynk.syncVirtual(button2_vpin);
+  Blynk.syncVirtual(slider_vpin);
+  Blynk.syncVirtual(tempC_vpin);
+  Blynk.syncVirtual(tempH_vpin);
+}
+
+BLYNK_WRITE(button1_vpin) {
+  led1_state = param.asInt();
+  digitalWrite(led1_pin, led1_state);
+}
+
+BLYNK_WRITE(button2_vpin) {
+  led2_state = param.asInt();
+  digitalWrite(led2_pin, led2_state);
+}
+
+BLYNK_WRITE(slider_vpin){
+  int value = param.asInt();
+  Serial.println(value);
+  myservo.write(value);
+}
+
+void sendSensor()
+{
+   float temp_in_C = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
+   float hum = dht.readHumidity();
+
+  if (isnan(temp_in_C)|| isnan(hum)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+
+  if (temp_in_C > 35 || temp_in_C < 25 ){
+    digitalWrite(Buzz,1);
+  } else {
+    digitalWrite(Buzz,0);
+  }
+  Blynk.virtualWrite(tempC_vpin, temp_in_C); // select your virtual pins accordingly
+  Blynk.virtualWrite(tempH_vpin, hum); // select your virtual pins accordingly
+}
+
+void control_led(int led){
+  if(led == 1){
+    led1_state = !led1_state;
+    digitalWrite(led1_pin, led1_state);
+    Serial.print("led1 State = ");
+    Serial.println(led1_state);
+    delay(50);
+  }
+
+  else if(led == 2){
+    led2_state = !led2_state;
+    digitalWrite(led2_pin, led2_state);    
+    Serial.print("led2 State = ");
+    Serial.println(led2_state);
+    delay(50);
+  }
+}
+
+void setup()
+{
+  Serial.begin(115200);
+
+  pinMode(led1_pin, OUTPUT);
+  pinMode(led2_pin, OUTPUT);
+  dht.begin();
+  digitalWrite(led1_pin, LOW);
+  digitalWrite(led2_pin, LOW);
+
+  // Allow allocation of all timers
+	ESP32PWM::allocateTimer(0);
+	ESP32PWM::allocateTimer(1);
+	ESP32PWM::allocateTimer(2);
+	ESP32PWM::allocateTimer(3);
+	myservo.setPeriodHertz(50);    // standard 50 hz servo
+	myservo.attach(servo_pin, 500, 2400); // attaches the servo on pin 18 to the servo object
+    lcd.init();
+    lcd.clear();         
+    lcd.backlight();      // Make sure backlight is on
+
+  Blynk.begin(auth, ssid, pass);timer.setInterval(1000L, sendSensor);
+}
+
+void loop()
+{
+  // Print temperature on the LCD
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Temperature");
+
+  lcd.setCursor(0, 1);
+  String a = String(dht.readTemperature());
+  lcd.print( a + " C");
+
+  delay(1000);
