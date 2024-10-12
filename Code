@@ -138,6 +138,6 @@ void loop()
 
   lcd.setCursor(0, 1);
   String a = String(dht.readTemperature());
-  lcd.print( a + " C");
+  lcd.print( a + " C"); 
 
   delay(1000);
